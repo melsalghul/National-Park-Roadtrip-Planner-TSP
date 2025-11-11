@@ -133,16 +133,6 @@ def createDrivableDistanceMatrix(input_file, output_file):
     # Save matrix to CSV
     df_matrix.to_csv(output_file, index=True)
     print(f"Saved driving distance matrix to: {output_file} (units: miles)")
-    
-#Make sure all modules are present and installs them when it is not
-required_modules = ['geopandas', 'fiona', 'pandas', 'geopy', 'requests', 'tqdm']
-for module in required_modules:
-    if importlib.util.find_spec(module) is None:
-        print(f"Required Module '{module}' not found. Installing.")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", module])
-    else:
-        print(f"Module '{module}' is already installed.")
-
 
 # Run Everything
 filterFromKMLtoCSV('DataScraping/parkdata.kml', 'DataScraping/contiguousUSParks.csv')
