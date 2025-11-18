@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National Park Router</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        #map { height: 600px; width: 100%; border-radius: 8px; }
+        .container { margin-top: 20px; }
+        .loading-overlay {
+            display: none;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); z-index: 1000;
+            justify-content: center; align-items: center; font-weight: bold;
+        }
+        .stat-box { background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="mb-4 text-center">National Park Road Trip Planner</h2>
+    
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <select id="parkSelect" class="form-select">
+                <option selected disabled>Loading parks...</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button id="btnRoute" class="btn btn-primary w-100">Plan Route (Next 10 Parks)</button>
+        </div>
+    </div>
+
+    <div class="position-relative">
+        <div id="loading" class="loading-overlay">Calculating Route via OSRM...</div>
+        <div id="map"></div>
+    </div>
+
+    <div id="stats" class="stat-box d-none">
+        <h4>Trip Details</h4>
+        <p><strong>Total Distance:</strong> <span id="distVal"></span> miles</p>
+        <p><strong>Estimated Driving Time:</strong> <span id="durVal"></span> hours</p>
+        <p class="text-muted small">Note: Route calculated using Nearest Neighbor heuristic. Limited to 10 stops to preserve public API limits.</p>
+        <hr>
+        <h5>Stops:</h5>
+        <ol id="stopList"></ol>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    const map = L.map('map').setView([39.8283, -98.5795], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let currentRouteLayer = null;
+    let markers = [];
+
+    fetch('/api/parks')
+        .then(res => res.json())
+        .then(data => {
+            const select = document.getElementById('parkSelect');
+            select.innerHTML = '<option selected disabled>Select a Starting Park</option>';
+            
+            data.forEach(park => {
+                const option = document.createElement('option');
+                option.value = park['Park Name'];
+                option.textContent = park['Park Name'];
+                select.appendChild(option);
+            });
+        })
+        .catch(err => console.error("Error loading parks:", err));
+
+    document.getElementById('btnRoute').addEventListener('click', () => {
+        const startPark = document.getElementById('parkSelect').value;
+        if (startPark === "Select a Starting Park") {
+            alert("Please select a park first.");
+            return;
+        }
+
+        document.getElementById('loading').style.display = 'flex';
+        document.getElementById('stats').classList.add('d-none');
+
+        if (currentRouteLayer) map.removeLayer(currentRouteLayer);
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        fetch('/api/route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ start_park: startPark })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('loading').style.display = 'none';
+            
+            if (data.error) {
+                alert("Error: " + data.error);
+                return;
+            }
+
+            currentRouteLayer = L.geoJSON(data.route_geometry, {
+                style: { color: 'blue', weight: 5, opacity: 0.7 }
+            }).addTo(map);
+
+            map.fitBounds(currentRouteLayer.getBounds(), { padding: [50, 50] });
+
+            const stopList = document.getElementById('stopList');
+            stopList.innerHTML = '';
+
+            data.waypoints.forEach((wp, index) => {
+                const marker = L.marker([wp.Latitude, wp.Longitude])
+                    .bindPopup(`<b>#${index + 1}: ${wp['Park Name']}</b>`)
+                    .addTo(map);
+                markers.push(marker);
+
+                const li = document.createElement('li');
+                li.textContent = wp['Park Name'];
+                stopList.appendChild(li);
+            });
+
+            document.getElementById('distVal').textContent = data.total_distance_miles;
+            document.getElementById('durVal').textContent = data.total_duration_hours;
+            document.getElementById('stats').classList.remove('d-none');
+
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('loading').style.display = 'none';
+            alert("Failed to calculate route.");
+        });
+    });
+</script>
+
+</body>
+</html>
