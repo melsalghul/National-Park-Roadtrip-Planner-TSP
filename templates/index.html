@@ -32,12 +32,12 @@
             </select>
         </div>
         <div class="col-md-4">
-            <button id="btnRoute" class="btn btn-primary w-100">Plan Route (Next 10 Parks)</button>
+            <button id="btnRoute" class="btn btn-primary w-100">Plan Route</button>
         </div>
     </div>
 
     <div class="position-relative">
-        <div id="loading" class="loading-overlay">Calculating Route via OSRM...</div>
+        <div id="loading" class="loading-overlay">Displaying Route via OSRM...</div>
         <div id="map"></div>
     </div>
 
@@ -45,7 +45,6 @@
         <h4>Trip Details</h4>
         <p><strong>Total Distance:</strong> <span id="distVal"></span> miles</p>
         <p><strong>Estimated Driving Time:</strong> <span id="durVal"></span> hours</p>
-        <p class="text-muted small">Note: Route calculated using Nearest Neighbor heuristic. Limited to 10 stops to preserve public API limits.</p>
         <hr>
         <h5>Stops:</h5>
         <ol id="stopList"></ol>

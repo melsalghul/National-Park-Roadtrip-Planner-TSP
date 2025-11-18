@@ -25,7 +25,7 @@ public final class TSPAdaptiveEvolutionaryAlgorithm {
         Configurator.configureRandomGenerator(101);
        
         // load matrix from CSV file
-        String filename = "../DataScraping/drivableDistanceMatrix.csv";
+        String filename = "DataScraping\\drivableDistanceMatrix.csv";
         
         double[][] distanceMatrix = loadMatrix(filename);
 

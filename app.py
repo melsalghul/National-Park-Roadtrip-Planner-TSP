@@ -26,16 +26,12 @@ def get_parks():
     df = load_data()
     if df is None:
         return jsonify({"error": "CSV not found. Run AIONationalParkDistance.py first."}), 500
-
+    
     parks = df.sort_values('Park Name')[['Park Name', 'Latitude', 'Longitude']].to_dict(orient='records')
     return jsonify(parks)
 
 @app.route('/api/route', methods=['POST'])
 def get_route():
-    """
-    Calculates a Nearest Neighbor route starting from the selected park.
-    Initially imited to 10 stops to prevent Public OSRM API timeouts/bans.
-    """
     data = request.json
     start_park_name = data.get('start_park')
     
@@ -51,7 +47,7 @@ def get_route():
     visited_indices = set(route_indices)
     current_idx = start_node.index[0]
 
-    STOPS_LIMIT = 51 
+    STOPS_LIMIT = 51
     
     while len(route_indices) < STOPS_LIMIT and len(route_indices) < len(df):
         current_loc = (df.loc[current_idx, 'Latitude'], df.loc[current_idx, 'Longitude'])
@@ -79,7 +75,7 @@ def get_route():
         coordinates.append(f"{row['Longitude']},{row['Latitude']}")
     
     coord_string = ";".join(coordinates)
-    
+
     url = OSRM_ROUTE_URL.format(coord_string) + "?overview=full&geometries=geojson"
     
     try:
