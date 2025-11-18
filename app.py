@@ -34,7 +34,7 @@ def get_parks():
 def get_route():
     """
     Calculates a Nearest Neighbor route starting from the selected park.
-    Limits to 10 stops to prevent Public OSRM API timeouts/bans.
+    Initially imited to 10 stops to prevent Public OSRM API timeouts/bans.
     """
     data = request.json
     start_park_name = data.get('start_park')
@@ -51,7 +51,7 @@ def get_route():
     visited_indices = set(route_indices)
     current_idx = start_node.index[0]
 
-    STOPS_LIMIT = 10 
+    STOPS_LIMIT = 51 
     
     while len(route_indices) < STOPS_LIMIT and len(route_indices) < len(df):
         current_loc = (df.loc[current_idx, 'Latitude'], df.loc[current_idx, 'Longitude'])
