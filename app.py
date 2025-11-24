@@ -1,18 +1,25 @@
 import pandas as pd
 import requests
-import json
 from flask import Flask, render_template, jsonify, request
-from geopy.distance import geodesic
 
 app = Flask(__name__)
 
 CSV_PATH = 'DataScraping/contiguousUSParks.csv'
+TSP_OUTPUT_PATH = 'DataScraping/tsp_result.txt'
 OSRM_ROUTE_URL = "http://router.project-osrm.org/route/v1/driving/{}"
 
 def load_data():
+    """Load the park CSV containing names + coordinates."""
     try:
-        df = pd.read_csv(CSV_PATH)
-        return df
+        return pd.read_csv(CSV_PATH)
+    except FileNotFoundError:
+        return None
+
+def load_tsp_route():
+    """Read the TSP solver output listing park names in optimal order."""
+    try:
+        with open(TSP_OUTPUT_PATH, 'r') as f:
+            return [line.strip() for line in f.readlines()]
     except FileNotFoundError:
         return None
 
@@ -20,80 +27,70 @@ def load_data():
 def index():
     return render_template('index.html')
 
+
 @app.route('/api/parks')
 def get_parks():
-    """Returns list of parks for the dropdown."""
+    """Return list of parks for frontend dropdown."""
     df = load_data()
     if df is None:
-        return jsonify({"error": "CSV not found. Run AIONationalParkDistance.py first."}), 500
+        return jsonify({"error": "CSV not found. Run data acquisition first."}), 500
     
-    parks = df.sort_values('Park Name')[['Park Name', 'Latitude', 'Longitude']].to_dict(orient='records')
+    parks = df.sort_values('Park Name')[['Park Name', 'Latitude', 'Longitude']] \
+              .to_dict(orient='records')
     return jsonify(parks)
+
 
 @app.route('/api/route', methods=['POST'])
 def get_route():
-    data = request.json
-    start_park_name = data.get('start_park')
+    """Return the optimized TSP route + mapped OSRM route."""
     
     df = load_data()
     if df is None:
-        return jsonify({"error": "Data not found"}), 500
+        return jsonify({"error": "CSV not found"}), 500
 
-    start_node = df[df['Park Name'] == start_park_name]
-    if start_node.empty:
-        return jsonify({"error": "Park not found"}), 404
+    tsp_route = load_tsp_route()
+    if tsp_route is None:
+        return jsonify({"error": "TSP output file tsp_result.txt not found"}), 500
 
-    route_indices = [start_node.index[0]]
-    visited_indices = set(route_indices)
-    current_idx = start_node.index[0]
+    ordered_points = []
+    for park_name in tsp_route:
+        match = df[df['Park Name'] == park_name]
+        if match.empty:
+            return jsonify({"error": f"Park not found in CSV: {park_name}"}), 500
+        ordered_points.append(match.iloc[0])
 
-    STOPS_LIMIT = 51
-    
-    while len(route_indices) < STOPS_LIMIT and len(route_indices) < len(df):
-        current_loc = (df.loc[current_idx, 'Latitude'], df.loc[current_idx, 'Longitude'])
-        nearest_dist = float('inf')
-        nearest_idx = -1
+    ordered_df = pd.DataFrame(ordered_points)
 
-        for idx, row in df.iterrows():
-            if idx not in visited_indices:
-                target_loc = (row['Latitude'], row['Longitude'])
-                dist = geodesic(current_loc, target_loc).miles
-                if dist < nearest_dist:
-                    nearest_dist = dist
-                    nearest_idx = idx
-        
-        if nearest_idx != -1:
-            visited_indices.add(nearest_idx)
-            route_indices.append(nearest_idx)
-            current_idx = nearest_idx
-        else:
-            break
+    coordinates = [
+        f"{row['Longitude']},{row['Latitude']}"
+        for _, row in ordered_df.iterrows()
+    ]
 
-    ordered_points = df.loc[route_indices]
-    coordinates = []
-    for _, row in ordered_points.iterrows():
-        coordinates.append(f"{row['Longitude']},{row['Latitude']}")
-    
+    start_coord = coordinates[0]
+    coordinates.append(start_coord)
+
     coord_string = ";".join(coordinates)
 
     url = OSRM_ROUTE_URL.format(coord_string) + "?overview=full&geometries=geojson"
-    
+
     try:
         r = requests.get(url, timeout=10)
         if r.status_code != 200:
             return jsonify({"error": "OSRM API Error"}), 400
-        
+
         osrm_data = r.json()
-        
+
         return jsonify({
             "route_geometry": osrm_data['routes'][0]['geometry'],
-            "waypoints": ordered_points[['Park Name', 'Latitude', 'Longitude']].to_dict(orient='records'),
+            "waypoints": ordered_df[['Park Name', 'Latitude', 'Longitude']].to_dict(orient='records'),
             "total_distance_miles": round(osrm_data['routes'][0]['distance'] * 0.000621371, 1),
-            "total_duration_hours": round(osrm_data['routes'][0]['duration'] / 3600, 1)
+            "total_duration_hours": round(osrm_data['routes'][0]['duration'] / 3600, 1),
+            "closed_tour": True
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

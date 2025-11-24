@@ -19,26 +19,37 @@ import java.io.IOException;
 
 public final class TSPAdaptiveEvolutionaryAlgorithm {
 
+    // Container for both distance matrix and park names
+    public static class TSPData {
+        public final double[][] matrix;
+        public final String[] names;
+
+        public TSPData(double[][] matrix, String[] names) {
+            this.matrix = matrix;
+            this.names = names;
+        }
+    }
 
     public static void main(String[] args) throws IOException, CsvValidationException {
-       
+
         Configurator.configureRandomGenerator(101);
-       
-        // load matrix from CSV file
+
+        // Load matrix + park names from CSV file
         String filename = "DataScraping\\drivableDistanceMatrix.csv";
-        
-        double[][] distanceMatrix = loadMatrix(filename);
+        TSPData data = loadMatrix(filename);
+
+        double[][] distanceMatrix = data.matrix;
+        String[] parkNames = data.names;
 
         int numCities = 51;
-        
+
         RandomTSPMatrix.Double problem = new RandomTSPMatrix.Double(distanceMatrix);
 
         int populationSize = 100;
         int maxGenerations = 1000;
         int numElite = 10;
-        
 
-        //run adaptive evolutionary algorithm
+        // Run adaptive evolutionary algorithm
         AdaptiveEvolutionaryAlgorithm<Permutation> aea =
             new AdaptiveEvolutionaryAlgorithm<Permutation>(
                 populationSize,
@@ -48,40 +59,51 @@ public final class TSPAdaptiveEvolutionaryAlgorithm {
                 new InverseCostFitnessFunction<Permutation>(problem),
                 new FitnessProportionalSelection(),
                 numElite);
-        
-        SolutionCostPair<Permutation> solution =
-            aea.optimize(maxGenerations);
-    
-        System.out.println("Best tour length: " + solution.getCost());
-        System.out.println("Permutation:      " + solution.getSolution());
-    }    
 
-    private static double[][] loadMatrix(String filename) throws IOException, CsvValidationException{
-        //number of parks
+        SolutionCostPair<Permutation> solution = aea.optimize(maxGenerations);
+
+        System.out.println("Best tour length: " + solution.getCost());
+
+        // Convert permutation to park names
+        Permutation perm = solution.getSolution();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Route: [");
+
+        for (int i = 0; i < perm.length(); i++) {
+            int idx = perm.get(i);
+            sb.append(parkNames[idx]);
+            if (i < perm.length() - 1) sb.append(", ");
+        }
+
+        sb.append("]");
+
+        System.out.println(sb.toString());
+    }
+
+    private static TSPData loadMatrix(String filename) throws IOException, CsvValidationException {
         int size = 51;
         double[][] matrix = new double[size][size];
+        String[] names = new String[size];
 
-        //read from csv
+        // Read CSV
         try (CSVReader reader = new CSVReader(new FileReader(filename))) {
             String[] row;
             reader.readNext(); // skip header row
             int i = 0;
+
             while ((row = reader.readNext()) != null && i < size) {
+                names[i] = row[0]; // First column = park name
+
                 for (int j = 0; j < size; j++) {
-                    // skip first column (park name)
-                    matrix[i][j] = Math.round(Double.parseDouble(row[j+1]) * 10000.0) / 10000.0;
+                    matrix[i][j] = Math.round(
+                        Double.parseDouble(row[j + 1]) * 10000.0
+                    ) / 10000.0;
                 }
+
                 i++;
             }
         }
 
-        return matrix;
+        return new TSPData(matrix, names);
     }
-
-
 }
-
-
-
-
-
