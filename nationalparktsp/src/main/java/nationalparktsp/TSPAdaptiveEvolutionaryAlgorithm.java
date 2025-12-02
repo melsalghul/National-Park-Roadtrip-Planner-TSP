@@ -1,5 +1,8 @@
 package nationalparktsp;
 
+import java.io.FileReader;
+import java.io.IOException;
+
 import org.cicirello.permutations.Permutation;
 import org.cicirello.search.Configurator;
 import org.cicirello.search.SolutionCostPair;
@@ -13,9 +16,6 @@ import org.cicirello.search.problems.tsp.RandomTSPMatrix;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
-
-import java.io.FileReader;
-import java.io.IOException;
 
 public final class TSPAdaptiveEvolutionaryAlgorithm {
 
@@ -35,11 +35,11 @@ public final class TSPAdaptiveEvolutionaryAlgorithm {
         Configurator.configureRandomGenerator(101);
 
         // Load matrix + park names from CSV file
-        String filename = "DataScraping\\drivableDistanceMatrix.csv";
+        String filename = "DataScraping/drivableDistanceMatrix.csv";
         TSPData data = loadMatrix(filename);
 
         double[][] distanceMatrix = data.matrix;
-        String[] parkNames = data.names;
+        //String[] parkNames = data.names;
 
         int numCities = 51;
 
@@ -63,9 +63,25 @@ public final class TSPAdaptiveEvolutionaryAlgorithm {
         SolutionCostPair<Permutation> solution = aea.optimize(maxGenerations);
 
         System.out.println("Best tour length: " + solution.getCost());
-
-        // Convert permutation to park names
+       
         Permutation perm = solution.getSolution();
+        String outputFile = "nationalparktsp/src/main/resources/TSP_Solution_Permutation.txt";
+
+        try (java.io.PrintWriter out = new java.io.PrintWriter(outputFile)) {
+
+        for (int i = 0; i < perm.length(); i++) {
+            out.print(perm.get(i));
+            if (i < perm.length() - 1) {
+                out.print(", ");  // comma-separated
+            }
+        }
+
+        } catch (IOException e) {
+            System.err.println("Error writing permutation file: " + e.getMessage());
+        }
+         
+        /*
+        // Convert permutation to park names
         StringBuilder sb = new StringBuilder();
         sb.append("Route: [");
 
@@ -78,6 +94,7 @@ public final class TSPAdaptiveEvolutionaryAlgorithm {
         sb.append("]");
 
         System.out.println(sb.toString());
+         */
     }
 
     private static TSPData loadMatrix(String filename) throws IOException, CsvValidationException {
@@ -106,4 +123,8 @@ public final class TSPAdaptiveEvolutionaryAlgorithm {
 
         return new TSPData(matrix, names);
     }
+
+    
+
+
 }
