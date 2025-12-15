@@ -8,29 +8,8 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
-        #map { height: 600px; width: 100%; border-radius: 8px; }
-        .loading-overlay {
-            display: none;
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        .stat-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            margin-top: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 <body>
 
@@ -117,7 +96,7 @@
             }
 
             routeLayer = L.geoJSON(data.route_geometry, {
-                style: { color: "blue", weight: 4 }
+                style: { color: "#5a2401", weight: 4 }
             }).addTo(map);
 
             map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
@@ -126,7 +105,15 @@
             stopList.innerHTML = "";
 
             data.waypoints.forEach((wp, i) => {
-                const m = L.marker([wp.Latitude, wp.Longitude])
+                const cls = i === 0 ? 'marker marker-start' : (i === data.waypoints.length - 1 ? 'marker marker-stop' : 'marker');
+                const icon = L.divIcon({
+                    className: cls,
+                    html: `<span>${i + 1}</span>`,
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 34]
+                });
+
+                const m = L.marker([wp.Latitude, wp.Longitude], { icon })
                     .bindPopup(`<b>#${i + 1}: ${wp["Park Name"]}</b>`)
                     .addTo(map);
 
