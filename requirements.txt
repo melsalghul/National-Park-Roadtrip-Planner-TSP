@@ -1,6 +1,10 @@
 flask
 pandas
 geopandas
+json5
+jsonpointer
+jsonschema
+jsonschema-specifications
 fiona
 geopy
 requests
