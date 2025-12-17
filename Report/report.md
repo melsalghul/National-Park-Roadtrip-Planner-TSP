@@ -10,6 +10,8 @@ Mikael P. (MP018) - Data scraping, Quality Assurance
 
 Melody A. (melsalghul) - OSRM API & Algorithm Implementation
 
+Everybody - Proposal & Report
+
 ### Run web application locally
 1) Have Python installed in your computer
 2) Open the terminal and install necessary modules by running pip install -r requirements.txt
