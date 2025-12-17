@@ -98,3 +98,8 @@ The group successfully implemented a **National Park TSP Road Trip Planner web a
 Throughout the project, the group gained a deeper understanding of **adaptive evolutionary algorithms** and the complexity of TSP problems. Challenges included scraping and filtering park data, generating realistic distance matrices, integrating multiple programming languages, and ensuring seamless interoperability between system components. These challenges were addressed by standardizing intermediate outputs as CSV and TXT files.
 
 Overall, this project demonstrates a practical and interactive application of the Traveling Salesman Problem combined with real-world routing and visualization.
+
+## Bibliography
+
+[1] Vincent A. Cicirello. Open Source Evolutionary Computation with Chips-n-Salsa. In *Proceedings of the 16th International Joint Conference on Computational Intelligence*, pages 330-337. November 2024. doi:10.5220/0013040600003837. [PDF] [BIB] [DOI] [arXiv] [CODE]
+
