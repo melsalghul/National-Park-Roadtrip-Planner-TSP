@@ -14,7 +14,6 @@
 3) Have parkdata.kml in the same folder as the python file
 4) Run AIO python file 
 5) 4-outputs, 1-json file, 3-csv file
-6) 
 
 ## Introduction
 
