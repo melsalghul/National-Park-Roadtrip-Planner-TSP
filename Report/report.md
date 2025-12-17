@@ -1,6 +1,10 @@
 [Topics Comp Sci Report.pdf](https://github.com/user-attachments/files/24202954/Topics.Comp.Sci.Report.pdf)
 
 # National-Park-Roadtrip-Planner-TSP
+Julia N. (jnitting) - Algorithm Implementation 
+Thanh N. (ThanhNguyen51) - Front-End Implementation
+Mikael P. (MP018) - Data scraping, Quality Assurance
+Melody A. (melsalghul) - OSRM API & Algorithm Implementation
 
 ### Run web application locally
 1) Have Python installed in your computer
